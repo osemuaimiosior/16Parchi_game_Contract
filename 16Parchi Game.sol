@@ -3,8 +3,8 @@ pragma solidity ^0.8.0;
 
 contract SolahParchiThap {
     address owner = msg.sender;
-    address[2] p;
-    uint8[4][2] aparchis;
+    address[4] p;
+    uint8[4][4] aparchis;
     uint endgame;
     uint newgame;
     uint startTime;
@@ -20,14 +20,15 @@ contract SolahParchiThap {
     mapping(address => uint256) wins;
 
     // To set and start the game
-    function setState(address[2] memory players, uint8[4][2] memory parchis) public onlyOwner returns (string memory){
+    function setState(address[4] memory players, uint8[4][4] memory parchis) public onlyOwner returns (string memory){
        require(newgame == 0, "Game is currently in session");
 
     aparchis = parchis;
 
-       for( uint ad; ad < 2; ad++){
+       for( uint ad; ad < 4; ad++){
         require(players[ad] != address(0));
        }
+
 
        for (uint i=0; i < players.length; i++){
             if (players[i] == owner){
@@ -60,7 +61,7 @@ contract SolahParchiThap {
         require(_players[msg.sender][parchi] > 0, "Not enough parchis to play");
         require(parchi < 4, "Invalid input");
         
-        if(turn == 1){
+        if(turn == 3){
             turn = 0;
             value = _players[msg.sender][parchi]; 
             _players[p[turn]][parchi] += value;
@@ -80,7 +81,7 @@ contract SolahParchiThap {
 
 
     // To claim win
-    function claimWin() public returns (string memory) {
+    function claimWin() public returns (string memory done) {
         uint v = checkP();
         require (v != 7, "You are not a vaild memebr of this game");
 
@@ -103,7 +104,7 @@ contract SolahParchiThap {
         require(newgame == 1, "A game is not in session, start a game");
 
         newgame = 0;
-        p[0] = p[1] = address(0);
+        p[0] = p[1] = p[2] = p[3] = address(0);
     }
 
 
@@ -124,13 +125,46 @@ contract SolahParchiThap {
     }
 
     // To get the state of the game
-    function getState() public view onlyOwner returns (address[2] memory, address, uint8[4][2] memory) {
-        require(newgame == 1, "Game is not in session");
+    function getState() public view  returns (address[4] memory players_, address _turn, uint8[][4] memory game) {
+        // require(newgame == 1, "Game is not in session");
+
+       /* unchecked{ if(turn == 0){
+                        players_[0] = p[0];
+                        players_[1] = p[1];
+                        players_[2] = p[2];
+                        players_[3] = p[3];
+                    } if(turn == 1){
+                        players_[0] = p[1];
+                        players_[1] = p[2];
+                        players_[2] = p[3];
+                        players_[3] = p[0];
+                    } if(turn == 2){
+                        players_[0] = p[2];
+                        players_[1] = p[3];
+                        players_[2] = p[0];
+                        players_[3] = p[1];
+                    } if(turn == 3){
+                        players_[0] = p[3];
+                        players_[1] = p[0];
+                        players_[2] = p[1];
+                        players_[3] = p[2];
+                    }   
+        }*/
+        
+        _turn = p[turn];
+
+        game[0] = _players[p[0]];
+        game[1] = _players[p[1]];
+        game[2] = _players[p[2]];
+        game[3] = _players[p[3]];
+
+        return (p, _turn, game);
+
     }
 
 
     function checkP() view internal returns (uint8){
-        for (uint8 i; i < 2; i++){
+        for (uint8 i; i < 4; i++){
             if(msg.sender == p[i]) return i;
         } return 7;
     }
