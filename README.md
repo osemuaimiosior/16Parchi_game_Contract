@@ -24,7 +24,9 @@ All funtions of the game
     function getWins(address add) 
 
 // To see the parchis held by the caller of this function
+    
     function myParchis() 
 
 // To get the state of the game
+    
     function getState() 
