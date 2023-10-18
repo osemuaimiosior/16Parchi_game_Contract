@@ -10,6 +10,7 @@ contract SolahParchiThap {
     uint startTime;
     uint8 turn;
     uint id;
+    uint8 value;
     
     modifier onlyOwner {require(msg.sender == owner); _;}
 
@@ -47,26 +48,32 @@ contract SolahParchiThap {
 
     // To pass the parchi to next player
     function passParchi(uint8 parchi) public returns (string memory) {
+        uint8 member = checkP();
+        require (member != 7, "You are not a vaild memebr of this game");
+        
         if(newgame == 0){
             turn = 0;
         }
         
-        uint8 j = checkP();
-       
-        require(j == turn, "It is not your turn to play the game");
-        turn  = j + 1;
+        require(member == turn, "It is not your turn to play the game");
         require(checkP() != 7, "You are not a valid player");
         require(_players[msg.sender][parchi] > 0, "Not enough parchis to play");
         require(parchi < 4, "Invalid input");
-
-        delete _players[msg.sender][parchi];
-        if(turn == 4){
-            turn = 1;
+        
+        if(turn == 1){
+            turn = 0;
+            value = _players[msg.sender][parchi]; 
+            _players[p[turn]][parchi] += value;
+        } else{
+            value = _players[msg.sender][parchi]; 
+            _players[p[turn+1]][parchi] += value;
+            turn  = member + uint8(1);
         }
-        uint8 value = _players[msg.sender][parchi]; 
-        _players[p[turn]][parchi] = value;
+        
+        delete _players[msg.sender][parchi];
 
         newgame = 1;
+        
 
         return ("Done");
     }
@@ -93,6 +100,7 @@ contract SolahParchiThap {
     //To end the game
     function endGame() public {
         require(uint(block.timestamp) > (startTime + 1 hours), "The game can not end game at the current moment");
+        require(newgame == 1, "A game is not in session, start a game");
 
         newgame = 0;
         p[0] = p[1] = address(0);
