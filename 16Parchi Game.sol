@@ -26,10 +26,10 @@ contract SolahParchiThap {
         uint q;
         
         for ( uint s; s < 4; s++){ 
-            q = aparchis[s][0] + aparchis[s][1] + aparchis[s][2] + aparchis[s][3];
-            require(q==4, "not 5");
-       }
-
+                q = aparchis[s][0] + aparchis[s][1] + aparchis[s][2] + aparchis[s][3];
+                require(q > 2 && q < 6);
+            }
+        
 
       for( uint ad; ad < 4; ad++){
         require(players[ad] != address(0));
@@ -105,7 +105,7 @@ contract SolahParchiThap {
 
 
     // To claim win
-    function claimWin() public {
+    function claimWin() public returns (string memory) {
         uint v = checkP();
         require (v != 7, "You are not a vaild memebr of this game");
 
@@ -113,11 +113,14 @@ contract SolahParchiThap {
 
         for (uint8 e; e < 4; e++){
             if(4 == dt[e]){
-                wins[msg.sender] += 200;
-            } else {
-                revert();
-            }
-        } 
+                wins[msg.sender] += 1;
+                newgame = 0;
+                p[0] = p[1] = p[2] = p[3] = address(0);
+                return ("Won");
+            } 
+        }
+
+        revert();
     }
 
 
@@ -130,8 +133,9 @@ contract SolahParchiThap {
 
     //To see the number of wins
     function getWins(address add) public view returns (uint256) {
-        require(add != address(0));
-        return (wins[msg.sender]);
+        require(add != address(0) && add != owner);
+        
+        return (wins[add]);
     }
 
 
