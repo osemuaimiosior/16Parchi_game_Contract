@@ -14,7 +14,7 @@ contract SolahParchiThap {
     
     modifier onlyOwner {require(msg.sender == owner); _;}
 
-    mapping (address => uint8[]) _players;
+    mapping (address => uint8[4]) _players;
     mapping(uint => mapping(address => bool)) allPlayers;
     mapping(address => uint) users;
     mapping(address => uint256) wins;
@@ -22,15 +22,21 @@ contract SolahParchiThap {
     // To set and start the game
     function setState(address[4] memory players, uint8[4][4] memory parchis) public onlyOwner returns (string memory){
        require(newgame == 0, "Game is currently in session");
+        aparchis = parchis;
+        uint q;
+        
+        for ( uint s; s < 4; s++){ 
+            q = aparchis[s][0] + aparchis[s][1] + aparchis[s][2] + aparchis[s][3];
+            require(q==4, "not 5");
+       }
 
-    aparchis = parchis;
 
-       for( uint ad; ad < 4; ad++){
+      for( uint ad; ad < 4; ad++){
         require(players[ad] != address(0));
        }
 
 
-       for (uint i=0; i < players.length; i++){
+      for (uint i=0; i < players.length; i++){
             if (players[i] == owner){
                 return ("Owner can not be a player");
             } else {
@@ -39,70 +45,84 @@ contract SolahParchiThap {
                 users[players[i]] = id;
                 id += 1;
             }
-        } p = players;
-        
+        } p = players;    
 
         startTime = uint(block.timestamp);
         return ("Succeeded");
-
     }
 
     // To pass the parchi to next player
     function passParchi(uint8 parchi) public returns (string memory) {
         uint8 member = checkP();
         require (member != 7, "You are not a vaild memebr of this game");
+        require (parchi != 0, "Parchi position can not be zero, start from 1");
         
-        if(newgame == 0){
+       unchecked{ if(newgame == 0){
             turn = 0;
         }
         
         require(member == turn, "It is not your turn to play the game");
         require(checkP() != 7, "You are not a valid player");
-        require(_players[msg.sender][parchi] > 0, "Not enough parchis to play");
-        require(parchi < 4, "Invalid input");
+        require(_players[msg.sender][parchi - 1] > 0, "Not enough parchis to play");
+        require(parchi <= 4, "Invalid input");
         
         if(turn == 3){
             turn = 0;
-            value = _players[msg.sender][parchi]; 
-            _players[p[turn]][parchi] += value;
+            value = _players[msg.sender][parchi -1];
+            if(value == 1){
+                _players[p[turn]][parchi-1] += value;
+                _players[msg.sender][parchi-1] = _players[msg.sender][parchi-1] - 1;
+                aparchis[member] = _players[msg.sender];
+                aparchis[turn] = _players[p[turn]];
+            } else{
+                  _players[p[turn]][parchi-1] += value -1;
+                _players[msg.sender][parchi-1] = _players[msg.sender][parchi-1] - 1;
+                aparchis[member] = _players[msg.sender];
+                aparchis[turn] = _players[p[turn]];
+            }
+          
         } else{
-            value = _players[msg.sender][parchi]; 
-            _players[p[turn+1]][parchi] += value;
-            turn  = member + uint8(1);
+            value = _players[msg.sender][parchi-1];
+            if (value == 1){
+                _players[p[turn+1]][parchi-1] += value;
+            _players[msg.sender][parchi-1] = _players[msg.sender][parchi-1] - 1;
+            aparchis[member] = _players[msg.sender];
+            aparchis[turn+1] = _players[p[turn+1]];
+            turn = member + uint8(1);
+            } else{
+                    _players[p[turn+1]][parchi-1] += value -1 ;
+                _players[msg.sender][parchi-1] = _players[msg.sender][parchi-1] - 1;
+                aparchis[member] = _players[msg.sender];
+                aparchis[turn+1] = _players[p[turn+1]];
+                turn = member + uint8(1);
+            }
         }
         
-        delete _players[msg.sender][parchi];
-
         newgame = 1;
-        
 
         return ("Done");
-    }
+    }}
 
 
     // To claim win
-    function claimWin() public returns (string memory done) {
+    function claimWin() public {
         uint v = checkP();
         require (v != 7, "You are not a vaild memebr of this game");
 
-        for (uint x; x < 4; x++){
-            if (_players[msg.sender][x] == 4) {
-                endGame();
+        uint8[4] memory dt =_players[msg.sender];
 
+        for (uint8 e; e < 4; e++){
+            if(4 == dt[e]){
+                wins[msg.sender] += 200;
             } else {
-                return ("You do not have a parchi slot of '4'");
+                revert();
             }
-        }
-
-        wins[msg.sender] += 1;
+        } 
     }
 
 
     //To end the game
     function endGame() public {
-        require(uint(block.timestamp) > (startTime + 1 hours), "The game can not end game at the current moment");
-        require(newgame == 1, "A game is not in session, start a game");
-
         newgame = 0;
         p[0] = p[1] = p[2] = p[3] = address(0);
     }
@@ -116,48 +136,19 @@ contract SolahParchiThap {
 
 
      // To see the parchis held by the caller of this function
-    function myParchis() public view returns (uint8[] memory) {
+    function myParchis() public view returns (uint8[4] memory) {
         require (checkP() != 7, "You are not a vaild memebr of this game");
 
-        uint8[] memory data =_players[msg.sender];
+        uint8[4] memory data =_players[msg.sender];
 
         return (data);
     }
 
     // To get the state of the game
-    function getState() public view  returns (address[4] memory players_, address _turn, uint8[][4] memory game) {
-        // require(newgame == 1, "Game is not in session");
-
-       /* unchecked{ if(turn == 0){
-                        players_[0] = p[0];
-                        players_[1] = p[1];
-                        players_[2] = p[2];
-                        players_[3] = p[3];
-                    } if(turn == 1){
-                        players_[0] = p[1];
-                        players_[1] = p[2];
-                        players_[2] = p[3];
-                        players_[3] = p[0];
-                    } if(turn == 2){
-                        players_[0] = p[2];
-                        players_[1] = p[3];
-                        players_[2] = p[0];
-                        players_[3] = p[1];
-                    } if(turn == 3){
-                        players_[0] = p[3];
-                        players_[1] = p[0];
-                        players_[2] = p[1];
-                        players_[3] = p[2];
-                    }   
-        }*/
+    function getState() public view  returns (address[4] memory players_, address _turn, uint8[4][4] memory game) {
         
         _turn = p[turn];
-
-        game[0] = _players[p[0]];
-        game[1] = _players[p[1]];
-        game[2] = _players[p[2]];
-        game[3] = _players[p[3]];
-
+        game = aparchis;
         return (p, _turn, game);
 
     }
